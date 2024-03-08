@@ -51,6 +51,7 @@ if globRank == 0: # Display
     ants = Colony(nb_ants, pos_nest, max_life, display=True, parallel=True)
     snapshop_taken = False
     f_c = np.empty(1, dtype=np.int)
+    sum_time, nb_iter = 0, 0
     
     while True:
         for event in pg.event.get():
@@ -71,27 +72,37 @@ if globRank == 0: # Display
         pg.display.update()
         
         end = time.time()
+        sum_time += end-deb
+        nb_iter += 1
+        
         food_counter = f_c[0]
         if food_counter == 1 and not snapshop_taken:
             pg.image.save(screen, "MyFirstFood.png")
             snapshop_taken = True
         if food_counter >= 2000:
             break
-        fps_file.write(f"FPS : {1./(end-deb):6.2f}, nourriture : {food_counter:7d}\n")
+        # print(f"FPS : {1./(end-deb):6.2f}, Moyenne : {sum_time/nb_iter*1000:7.3f}, nourriture : {food_counter:7d}", end='\r')
+        # fps_file.write(f"FPS : {1./(end-deb):6.2f}, nourriture : {food_counter:7d}\n")
         # pg.time.wait(500)
         # print(f"FPS : {1./(end-deb):6.2f}, nourriture : {food_counter:7d}", end='\r')
 else: 
     # All ranks different from 0 do the calculation
     a_maze = maze.Maze(size_laby, 12345, display=False)
     pherom = pheromone.Pheromon(size_laby, pos_food, alpha, beta)
-    ants = Colony(nb_ants // subNbp, pos_nest, max_life, display=False)
+    ants = Colony(nb_ants // subNbp, 
+                  pos_nest,
+                  max_life, 
+                  display=False, 
+                  parallel=True, 
+                  seed=nb_ants // subNbp * subRank + 1)
     
     glob_historic_path = np.empty((nb_ants, max_life+1, 2), dtype=np.int16) if subRank == 0 else None
     glob_directions = np.empty(nb_ants, dtype=np.int8) if subRank == 0 else None
     glob_age = np.empty(nb_ants, dtype=np.int64) if subRank == 0 else None
     glob_food_counter = np.empty(1, dtype=np.int)
-    
+    sum_time, nb_iter = 0, 0
     while True:
+        deb = time.time()
         food_counter, variation_pheromon, variation_pos = \
             ants.advance(a_maze, pos_food, pos_nest, pherom, food_counter)
         sum_variation_pheromon = np.zeros_like(variation_pheromon)
@@ -102,12 +113,15 @@ else:
         pherom.pheromon += sum_variation_pheromon /  np.maximum(sum_variation_pos, 1)
         
         pherom.do_evaporation(pos_food)
-        
+        end = time.time()
         # Gather the results
         subCom.Gather([ants.historic_path, MPI.INT16_T], [glob_historic_path, MPI.INT16_T], root=0)
         subCom.Gather([ants.directions, MPI.INT8_T], [glob_directions, MPI.INT8_T], root=0)
         subCom.Gather([ants.age, MPI.INT64_T], [glob_age, MPI.INT64_T], root=0)
         subCom.Allreduce([np.array([food_counter], dtype=np.int), MPI.INT], [glob_food_counter, MPI.INT], op=MPI.SUM)
+        
+        sum_time += end-deb
+        nb_iter += 1
         if subRank == 0:
             req1 = globCom.Isend([pherom.pheromon, MPI.DOUBLE], dest=0)
             req2 = globCom.Isend([glob_historic_path, MPI.INT16_T], dest=0)
@@ -123,5 +137,7 @@ if globRank == 0:
     fps_file.close()
     pg.image.save(screen, "Final.png")
     pg.quit()
-    
+    print(f"\nTime : {sum_time/nb_iter*1000:7.5f}, nourriture : {food_counter:7d}")
+else: 
+    open(f"Time_{globRank}.txt", "w").write(f"{sum_time/nb_iter*1000}ms")
 subCom.Free()

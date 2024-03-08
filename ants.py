@@ -21,9 +21,9 @@ class Colony:
         pos_init : Initial positions of ants (anthill position)
         max_life : Maximum life that ants can reach
     """
-    def __init__(self, nb_ants, pos_init, max_life, display=True, parallel=False):
+    def __init__(self, nb_ants, pos_init, max_life, display=True, parallel=False, seed = 1):
         # Each ant has is own unique random seed
-        self.seeds = np.arange(1, nb_ants+1, dtype=np.int64)
+        self.seeds = np.arange(seed, nb_ants+seed, dtype=np.int64)
         # State of each ant : loaded or unloaded
         self.is_loaded = np.zeros(nb_ants, dtype=np.int8)
         # Compute the maximal life amount for each ant :
@@ -254,18 +254,20 @@ if __name__ == "__main__":
     
     sum_time, nb_iter = 0, 0
     snapshop_taken = False
+    
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
                 exit(0)
 
-        deb = time.time()
+        
         pherom.display(screen)
         screen.blit(mazeImg, (0, 0))
         ants.display(screen)
         pg.display.update()
-                
+        
+        deb = time.time()        
         food_counter = ants.advance(a_maze, pos_food, pos_nest, pherom, food_counter)
         pherom.do_evaporation(pos_food)
         end = time.time()
@@ -277,4 +279,8 @@ if __name__ == "__main__":
         nb_iter += 1
         # pg.time.wait(500)
         # print(f"FPS : {1./(end-deb):6.2f}, nourriture : {food_counter:7d}", end='\r')
-        print(f"FPS : {1./(end-deb):6.2f}, Moyenne : {sum_time/nb_iter:6.2f}, nourriture : {food_counter:7d}", end='\r')
+        # print(f"FPS : {1./(end-deb):6.2f}, Moyenne : {sum_time/nb_iter*1000:7.3f}, nourriture : {food_counter:7d}", end='\r')
+        if food_counter >= 2000:
+            break
+    pg.quit()
+    print(f"\nTime : {sum_time/nb_iter*1000:7.5f}, nourriture : {food_counter:7d}")
