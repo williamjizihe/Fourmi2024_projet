@@ -21,7 +21,7 @@ class Colony:
         pos_init : Initial positions of ants (anthill position)
         max_life : Maximum life that ants can reach
     """
-    def __init__(self, nb_ants, pos_init, max_life, display=True):
+    def __init__(self, nb_ants, pos_init, max_life, display=True, parallel=False):
         # Each ant has is own unique random seed
         self.seeds = np.arange(1, nb_ants+1, dtype=np.int64)
         # State of each ant : loaded or unloaded
@@ -40,6 +40,7 @@ class Colony:
         self.historic_path[:, 0, 1] = pos_init[1]
         # Direction in which the ant is currently facing (depends on the direction it came from).
         self.directions = d.DIR_NONE*np.ones(nb_ants, dtype=np.int8)
+        self.parallel = parallel
         if display:
             self.sprites = []
             img = pg.image.load("ants.png").convert_alpha()
@@ -209,9 +210,12 @@ class Colony:
         [pheromones.mark(self.historic_path[i, self.age[i], :],
                          pheromon_old,
                          [has_north_exit[i], has_east_exit[i], has_west_exit[i], has_south_exit[i]]) for i in range(self.directions.shape[0])]
-        pheromone_variation = pheromones.pheromon - pheromon_old
-        pheromones.pheromon = pheromon_old # We change the pheromon map in the main program
-        return food_counter, pheromone_variation, np.where(pheromone_variation != 0, 1, 0).astype(np.int)
+        if self.parallel:
+            pheromone_variation = pheromones.pheromon - pheromon_old
+            pheromones.pheromon = pheromon_old # We change the pheromon map in the main program
+            return food_counter, pheromone_variation, np.where(pheromone_variation != 0, 1, 0).astype(np.int)
+        else:
+            return food_counter
 
     def display(self, screen):
         [screen.blit(self.sprites[self.directions[i]], 
@@ -248,7 +252,7 @@ if __name__ == "__main__":
     mazeImg = a_maze.display()
     food_counter = 0
     
-
+    sum_time, nb_iter = 0, 0
     snapshop_taken = False
     while True:
         for event in pg.event.get():
@@ -268,5 +272,9 @@ if __name__ == "__main__":
         if food_counter == 1 and not snapshop_taken:
             pg.image.save(screen, "MyFirstFood.png")
             snapshop_taken = True
+        
+        sum_time += end-deb
+        nb_iter += 1
         # pg.time.wait(500)
-        print(f"FPS : {1./(end-deb):6.2f}, nourriture : {food_counter:7d}", end='\r')
+        # print(f"FPS : {1./(end-deb):6.2f}, nourriture : {food_counter:7d}", end='\r')
+        print(f"FPS : {1./(end-deb):6.2f}, Moyenne : {sum_time/nb_iter:6.2f}, nourriture : {food_counter:7d}", end='\r')
