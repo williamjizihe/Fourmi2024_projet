@@ -47,7 +47,7 @@ if globRank == 0: # Display
     screen = pg.display.set_mode(resolution)
     a_maze = maze.Maze(size_laby, 12345, display=True)
     mazeImg = a_maze.display()
-    fps_file = open("fps.txt", "w")
+
     pherom = pheromone.Pheromon(size_laby, pos_food, alpha, beta)
     ants = Colony(nb_ants, pos_nest, max_life, display=True, parallel=True)
     snapshop_taken = False
@@ -134,7 +134,6 @@ else:
 
 globCom.Barrier()
 if globRank == 0:
-    fps_file.close()
     pg.image.save(screen, "Final.png")
     pg.quit()
 #     print(f"\nTime : {sum_time/nb_iter*1000:7.5f}, nourriture : {food_counter:7d}")
