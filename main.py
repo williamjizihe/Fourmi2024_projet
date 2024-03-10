@@ -2,7 +2,7 @@ import numpy as np
 import maze
 import pheromone
 from ants import Colony
-import pygame as pg
+
 import sys
 import time
 
@@ -42,6 +42,7 @@ if len(sys.argv) > 5:
 
 food_counter = 0
 if globRank == 0: # Display
+    import pygame as pg
     pg.init()
     screen = pg.display.set_mode(resolution)
     a_maze = maze.Maze(size_laby, 12345, display=True)
@@ -82,7 +83,6 @@ if globRank == 0: # Display
         if food_counter >= 2000:
             break
         # print(f"FPS : {1./(end-deb):6.2f}, Moyenne : {sum_time/nb_iter*1000:7.3f}, nourriture : {food_counter:7d}", end='\r')
-        # fps_file.write(f"FPS : {1./(end-deb):6.2f}, nourriture : {food_counter:7d}\n")
         # pg.time.wait(500)
         # print(f"FPS : {1./(end-deb):6.2f}, nourriture : {food_counter:7d}", end='\r')
 else: 
@@ -137,7 +137,7 @@ if globRank == 0:
     fps_file.close()
     pg.image.save(screen, "Final.png")
     pg.quit()
-    print(f"\nTime : {sum_time/nb_iter*1000:7.5f}, nourriture : {food_counter:7d}")
-else: 
-    open(f"Time_{globRank}.txt", "w").write(f"{sum_time/nb_iter*1000}ms")
+#     print(f"\nTime : {sum_time/nb_iter*1000:7.5f}, nourriture : {food_counter:7d}")
+# else: 
+#     open(f"Time_{globRank}.txt", "w").write(f"{sum_time/nb_iter*1000}ms")
 subCom.Free()
