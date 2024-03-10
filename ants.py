@@ -213,7 +213,7 @@ class Colony:
         if self.parallel:
             pheromone_variation = pheromones.pheromon - pheromon_old
             pheromones.pheromon = pheromon_old # We change the pheromon map in the main program
-            return food_counter, pheromone_variation, np.where(pheromone_variation != 0, 1, 0).astype(np.int)
+            return food_counter, pheromone_variation, np.where(pheromone_variation != 0, 1, 0).astype(np.int64)
         else:
             return food_counter
 

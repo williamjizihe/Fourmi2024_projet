@@ -51,7 +51,7 @@ if globRank == 0: # Display
     pherom = pheromone.Pheromon(size_laby, pos_food, alpha, beta)
     ants = Colony(nb_ants, pos_nest, max_life, display=True, parallel=True)
     snapshop_taken = False
-    f_c = np.empty(1, dtype=np.int)
+    f_c = np.empty(1, dtype=np.int64)
     sum_time, nb_iter = 0, 0
     
     while True:
@@ -65,7 +65,7 @@ if globRank == 0: # Display
         globCom.Recv([ants.historic_path, MPI.INT16_T], source=1)
         globCom.Recv([ants.directions, MPI.INT8_T], source=1)
         globCom.Recv([ants.age, MPI.INT64_T], source=1)
-        globCom.Recv([f_c, MPI.INT], source=1)
+        globCom.Recv([f_c, MPI.INT64_T], source=1)
         
         pherom.display(screen)
         screen.blit(mazeImg, (0, 0))
@@ -99,7 +99,7 @@ else:
     glob_historic_path = np.empty((nb_ants, max_life+1, 2), dtype=np.int16) if subRank == 0 else None
     glob_directions = np.empty(nb_ants, dtype=np.int8) if subRank == 0 else None
     glob_age = np.empty(nb_ants, dtype=np.int64) if subRank == 0 else None
-    glob_food_counter = np.empty(1, dtype=np.int)
+    glob_food_counter = np.empty(1, dtype=np.int64)
     sum_time, nb_iter = 0, 0
     while True:
         deb = time.time()
@@ -109,7 +109,7 @@ else:
         sum_variation_pos = np.zeros_like(variation_pos)
         # Syncronize the pheromones
         subCom.Allreduce([variation_pheromon, MPI.DOUBLE], [sum_variation_pheromon, MPI.DOUBLE], op=MPI.SUM)
-        subCom.Allreduce([variation_pos, MPI.INT], [sum_variation_pos, MPI.INT], op=MPI.SUM)
+        subCom.Allreduce([variation_pos, MPI.INT64_T], [sum_variation_pos, MPI.INT64_T], op=MPI.SUM)
         pherom.pheromon += sum_variation_pheromon /  np.maximum(sum_variation_pos, 1)
         
         pherom.do_evaporation(pos_food)
@@ -118,7 +118,7 @@ else:
         subCom.Gather([ants.historic_path, MPI.INT16_T], [glob_historic_path, MPI.INT16_T], root=0)
         subCom.Gather([ants.directions, MPI.INT8_T], [glob_directions, MPI.INT8_T], root=0)
         subCom.Gather([ants.age, MPI.INT64_T], [glob_age, MPI.INT64_T], root=0)
-        subCom.Allreduce([np.array([food_counter], dtype=np.int), MPI.INT], [glob_food_counter, MPI.INT], op=MPI.SUM)
+        subCom.Allreduce([np.array([food_counter], dtype=np.int64), MPI.INT64_T], [glob_food_counter, MPI.INT64_T], op=MPI.SUM)
         
         sum_time += end-deb
         nb_iter += 1
